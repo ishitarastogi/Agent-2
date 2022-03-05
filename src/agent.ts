@@ -7,7 +7,7 @@ import {
   ethers,
 } from "forta-agent";
 
-import { BigNumber,utils } from "ethers";
+import { BigNumber, utils } from "ethers";
 
 import { FLEXA_TOKEN_ABI } from "./abi";
 
@@ -21,7 +21,8 @@ export const createFinding = (
   partition: string,
   operator: string,
   from: string,
-  destinationPartition:any
+  destinationPartition: any,
+  to: string
 ): Finding => {
   return Finding.fromObject({
     name: "Large Deposit",
@@ -35,6 +36,7 @@ export const createFinding = (
       operator: operator,
       from: from,
       destinationPartition: destinationPartition,
+      to: to,
     },
   });
 };
@@ -64,8 +66,7 @@ function provideHandleTransaction(
       const value = events.args.amount;
 
       //derives destinationAddress from data argument
-
-      const decodedData = utils.defaultAbiCoder.decode(
+        const decodedData = utils.defaultAbiCoder.decode(
         ["bytes32", "bytes32"],
         data
       );
@@ -81,7 +82,8 @@ function provideHandleTransaction(
             events.args.fromPartition,
             events.args.operator,
             events.args.from,
-            decodedData
+            decodedData,
+            events.args.to
           );
           findings.push(newFinding);
         }

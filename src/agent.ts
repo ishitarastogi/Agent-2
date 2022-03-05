@@ -17,6 +17,7 @@ const transferByPartition: string =
   "event TransferByPartition(bytes32 indexed fromPartition,address operator, address indexed from,address indexed to,uint256 value,bytes data, bytes operatorData)";
 
 export const createFinding = (
+  amountThreshold: any,
   amount: number,
   partition: string,
   operator: string,
@@ -31,6 +32,7 @@ export const createFinding = (
     severity: FindingSeverity.Info,
     type: FindingType.Info,
     metadata: {
+      amountThreshold,
       value: amount.toString(),
       partition: partition,
       operator: operator,
@@ -78,6 +80,7 @@ function provideHandleTransaction(
       if (destinationPartitionMapping == true) {
         if (value.gte(amountThreshold)) {
           const newFinding: Finding = createFinding(
+            amountThreshold,
             events.args.value,
             events.args.fromPartition,
             events.args.operator,

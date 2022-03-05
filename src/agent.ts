@@ -63,7 +63,7 @@ function provideHandleTransaction(
     // fire alerts for transfers of large stake
     transferByPartitionEvent.forEach(async (events) => {
       const data = events.args.data;
-      const value = events.args.amount;
+      const value = events.args.value;
 
       //derives destinationAddress from data argument
         const decodedData = utils.defaultAbiCoder.decode(
@@ -78,7 +78,7 @@ function provideHandleTransaction(
       if (destinationPartitionMapping == true) {
         if (value.gte(amountThreshold)) {
           const newFinding: Finding = createFinding(
-            events.args.amount,
+            events.args.value,
             events.args.fromPartition,
             events.args.operator,
             events.args.from,
@@ -92,6 +92,8 @@ function provideHandleTransaction(
     return findings;
   };
 }
+
+
 export default {
   handleTransaction: provideHandleTransaction(
     AMOUNT_THRESHOLD,

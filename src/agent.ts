@@ -12,7 +12,7 @@ import { BigNumber, utils } from "ethers";
 import { FLEXA_TOKEN_ABI } from "./abi";
 
 const ethersProvider = getEthersProvider();
-const AMOUNT_THRESHOLD = 1000000; // 1 million
+const AMOUNT_THRESHOLD = utils.parseEther("1").mul(1e6); // 1 million
 const transferByPartition: string =
   "event TransferByPartition(bytes32 indexed fromPartition,address operator, address indexed from,address indexed to,uint256 value,bytes data, bytes operatorData)";
 
@@ -43,7 +43,7 @@ export const createFinding = (
   });
 };
 
-function provideHandleTransaction(
+export function provideHandleTransaction(
   amountThreshold: any,
   ampToken: string,
   flexaManager: string

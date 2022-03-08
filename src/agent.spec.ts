@@ -12,8 +12,8 @@ import abi from "./abi";
 import { leftPad } from "web3-utils";
 
  const toBytes32 = (n: string) => leftPad(BigNumber.from(n).toHexString(), 64);
-const AMP_TOKEN = createAddress("0xdef1");
-const FLEXA_TOKEN = createAddress("0xf1e4a");
+const AMP_TOKEN = createAddress(toBytes32("0xdef1"));
+const FLEXA_TOKEN = createAddress(toBytes32("0xf1e4a"));
 const AMOUNT_THRESHOLD: BigNumber = BigNumber.from(100);
 const AMP_IFACE: Interface = new Interface(abi.AMP_TOKEN);
 const FLEXA_IFACE: Interface = new Interface(abi.FLEXA_TOKEN);
@@ -59,11 +59,11 @@ describe("Large stake deposits", () => {
   it("should return no Findings due to incorrect event signature", async () => {
     const testFromPartition: string =
       "0xcccccccc2862b8cb21caedb8706d7f8b3445d8dfc790c524e3990ef014e7c578";
-    const testFrom: string = createAddress("0xabc1");
-    const testTo: string = createAddress("0xabc2");
+    const testFrom: string = createAddress(toBytes32("0xabc1"));
+    const testTo: string = createAddress(toBytes32("0xabc2"));
 
-    const testOperator: string = createAddress("0xe0a");
-    const bytesOperatorData: string = "0x0123";
+    const testOperator: string = createAddress(toBytes32("0xe0a"));
+    const bytesOperatorData: string = toBytes32("0x0123");
     const testValue: number = 100;
 
     const testDestinationPartition: string =
@@ -100,11 +100,11 @@ describe("Large stake deposits", () => {
   it("should returns  findings if value is lesser than threshold", async () => {
     const testFromPartition: string =
       "0xcccccccc2862b8cb21caedb8706d7f8b3445d8dfc790c524e3990ef014e7c578";
-    const testFrom: string = createAddress("0xabc1");
-    const testTo: string = createAddress("0xabc2");
+    const testFrom: string = createAddress(toBytes32("0xabc1"));
+    const testTo: string = createAddress(toBytes32("0xabc2"));
 
-    const testOperator: string = createAddress("0xe0a");
-    const bytesOperatorData: string = "0x0123";
+    const testOperator: string = createAddress(toBytes32("0xe0a"));
+    const bytesOperatorData: string = toBytes32("0x0123");
     const testValue: number = 10;
 
     const testDestinationPartition: string =
@@ -144,11 +144,11 @@ describe("Large stake deposits", () => {
   it("should returns  findings if value is equal to threshold", async () => {
     const testFromPartition: string =
       "0xcccccccc2862b8cb21caedb8706d7f8b3445d8dfc790c524e3990ef014e7c578";
-    const testFrom: string = createAddress("0xabc1");
-    const testTo: string = createAddress("0xabc2");
+    const testFrom: string = createAddress(toBytes32("0xabc1"));
+    const testTo: string = createAddress(toBytes32("0xabc2"));
 
-    const testOperator: string = createAddress("0xe0a");
-    const bytesOperatorData: string = "0x0123";
+    const testOperator: string = createAddress(toBytes32("0xe0a"));
+    const bytesOperatorData: string = toBytes32("0x0123");
     const testValue: any = AMOUNT_THRESHOLD;
 
     const testDestinationPartition: string =
@@ -199,11 +199,11 @@ describe("Large stake deposits", () => {
   it("should returns  findings if value is greater than threshold", async () => {
     const testFromPartition: string =
       "0xcccccccc2862b8cb21caedb8706d7f8b3445d8dfc790c524e3990ef014e7c578";
-    const testFrom: string = createAddress("0xabc1");
-    const testTo: string = createAddress("0xabc2");
+    const testFrom: string = createAddress(toBytes32("0xabc1"));
+    const testTo: string = createAddress(toBytes32("0xabc2"));
 
-    const testOperator: string = createAddress("0xe0a");
-    const bytesOperatorData: string = "0x0123";
+    const testOperator: string = createAddress(toBytes32("0xe0a"));
+    const bytesOperatorData: string = toBytes32("0x0123");
     const testValue: number = 10000000;
 
     const testDestinationPartition: string =
@@ -255,36 +255,36 @@ describe("Large stake deposits", () => {
     const CASES: TEST_CASE[] = [
       [
         AMOUNT_THRESHOLD,
-        100,
+        107,
         "0xcccccccc2862b8cb21caedb8706d7f8b3445d8dfc790c524e3990ef014e7c578",
-        createAddress("0xe0a"),
-        createAddress("0xabc1"),
+        createAddress(toBytes32("0xe0ba")),
+        createAddress(toBytes32("0xabd1")),
         "0xcccccccc7a0208a97d8ac263706d7f8b3445d8dfc790c524e3990ef014e7c578",
-        createAddress("0xabc1"),
+        createAddress(toBytes32("0xavc1")),
         "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffcccccccc7a0208a97d8ac263706d7f8b3445d8dfc790c524e3990ef014e7c578",
-        "0x0123",
+        toBytes32("0x0123"),
       ],
       [
         AMOUNT_THRESHOLD,
-        100,
+        10,
         "0xcccccccc2862b8cb21caedb8706d7f8b3445d8dfc790c524e3990ef014e7c578",
-        createAddress("0xe0a"),
-        createAddress("0xabc1"),
+        createAddress(toBytes32("0xe5a")),
+        createAddress(toBytes32("0xabc2")),
         "0xcccccccc7a0208a97d8ac263706d7f8b3445d8dfc790c524e3990ef014e7c578",
-        createAddress("0xabc1"),
+        createAddress(toBytes32("0xkbc1")),
         "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffcccccccc7a0208a97d8ac263706d7f8b3445d8dfc790c524e3990ef014e7c578",
-        "0x0123",
+        toBytes32("0x0123"),
       ],
       [
         AMOUNT_THRESHOLD,
-        100,
+        70,
         "0xcccccccc2862b8cb21caedb8706d7f8b3445d8dfc790c524e3990ef014e7c578",
-        createAddress("0xe0a"),
-        createAddress("0xabc1"),
+        createAddress(toBytes32("0xeoa")),
+        createAddress(toBytes32("0xadc1")),
         "0xcccccccc7a0208a97d8ac263706d7f8b3445d8dfc790c524e3990ef014e7c578",
-        createAddress("0xabc1"),
+        createAddress(toBytes32("0xapc1")),
         "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffcccccccc7a0208a97d8ac263706d7f8b3445d8dfc790c524e3990ef014e7c578",
-        "0x0123",
+        toBytes32("0x0123"),
       ],
     ];
 
@@ -333,11 +333,11 @@ describe("Large stake deposits", () => {
 
     const testFromPartition: string =
       "0xcccccccc2862b8cb21caedb8706d7f8b3445d8dfc790c524e3990ef014e7c578";
-    const testFrom: string = createAddress("0xabc1");
-    const testTo: string = createAddress("0xabc2");
+    const testFrom: string = createAddress(toBytes32("0xabc1"));
+    const testTo: string = createAddress(toBytes32("0xabc2"));
 
-    const testOperator: string = createAddress("0xe0a");
-    const bytesOperatorData: string = "0x0123";
+    const testOperator: string = createAddress(toBytes32("0xe0a"));
+    const bytesOperatorData: string = toBytes32("0x0123");
     const testValue: number = 100;
 
     const testDestinationPartition: string =

@@ -328,7 +328,8 @@ describe("Large stake deposits", () => {
         outputs: [true],
       });
     }
+
     const findings = await handleTransaction(txEvent);
-    expect(findings).toStrictEqual([createFinding( CASES[0][0],CASES[0][1],CASES[0][2],CASES[0][3],CASES[0][4],CASES[0][5],CASES[0][6])]);
+    expect(findings).toStrictEqual([createFinding( )]);
   });
 });

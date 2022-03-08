@@ -22,7 +22,8 @@
     "@ethersproject/bignumber": "^5.5.0",
     "bignumber.js": "^9.0.1",
     "forta-agent": "^0.0.38",
-    "forta-agent-tools": "^1.0.38"
+    "forta-agent-tools": "^1.0.38",
+    "web3-utils": "1.7.0"
   },
   "devDependencies": {
     "@types/jest": "^27.0.1",

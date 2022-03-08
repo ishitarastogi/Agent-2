@@ -18,4 +18,3 @@ const AMP_TOKEN = [
     FLEXA_TOKEN,
     AMP_TOKEN,
   };
-  

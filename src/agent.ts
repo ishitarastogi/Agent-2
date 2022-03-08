@@ -6,15 +6,13 @@ import {
   getEthersProvider,
   ethers,
 } from "forta-agent";
+import { BigNumber, utils, providers } from "ethers";
+import abi from "./abi";
 
-import { BigNumber, utils } from "ethers";
-
-import { FLEXA_TOKEN_ABI } from "./abi";
-
-const ethersProvider = getEthersProvider();
+const ethersProvider = getEthersProvider();                    
 const AMOUNT_THRESHOLD = utils.parseEther("1").mul(1e6); // 1 million
-const transferByPartition: string =
-  "event TransferByPartition(bytes32 indexed fromPartition,address operator, address indexed from,address indexed to,uint256 value,bytes data, bytes operatorData)";
+const AMP_TOKEN: string = "0xfF20817765cB7f73d4bde2e66e067E58D11095C2";
+const FLEXA_TOKEN: string = "0x706D7F8B3445D8Dfc790C524E3990ef014e7C578";
 
 export const createFinding = (
   amountThreshold: any,
@@ -22,7 +20,7 @@ export const createFinding = (
   partition: string,
   operator: string,
   from: string,
-  destinationPartition: any,
+  destinationPartition: string,
   to: string
 ): Finding => {
   return Finding.fromObject({
@@ -34,64 +32,72 @@ export const createFinding = (
     metadata: {
       amountThreshold,
       value: amount.toString(),
-      partition: partition,
-      operator: operator,
-      from: from,
-      destinationPartition: destinationPartition,
-      to: to,
+      partition: partition.toLocaleLowerCase(),
+      operator: operator.toLocaleLowerCase(),
+      from: from.toLocaleLowerCase(),
+      destinationPartition: destinationPartition.toLocaleLowerCase(),
+      to: to.toLocaleLowerCase(),
     },
   });
 };
 
 export function provideHandleTransaction(
-  amountThreshold: any,
+  amountThreshold: BigNumber,
   ampToken: string,
-  flexaManager: string
+  flexaManager: string,
+  provider: providers.Provider,
 ) {
   const flexaStakingContract = new ethers.Contract(
     flexaManager,
-    FLEXA_TOKEN_ABI,
-    ethersProvider
+    abi.FLEXA_TOKEN,
+    provider,
   );
   return async (txEvent: TransactionEvent) => {
     const findings: Finding[] = [];
 
     // filter the transaction logs for transferByPartition events
-    const transferByPartitionEvent = txEvent.filterLog(
-      transferByPartition,
+    const transferByPartitionEvents = txEvent.filterLog(
+      abi.AMP_TOKEN,
       ampToken
     );
+    // console.log(transferByPartitionEvents);
 
     // fire alerts for transfers of large stake
-    transferByPartitionEvent.forEach(async (events) => {
-      const data = events.args.data;
-      const value = events.args.value;
+    await Promise.all(transferByPartitionEvents.map(async (event) => {
+      const data = event.args.data;
+      const value = event.args.value;
 
+      // console.log("OK1");
       //derives destinationAddress from data argument
-        const decodedData = utils.defaultAbiCoder.decode(
+      const [,decodedPartition] = utils.defaultAbiCoder.decode(
         ["bytes32", "bytes32"],
-        data
+        data,
       );
 
+      console.log("foo",decodedPartition, data);
       const destinationPartitionMapping = await flexaStakingContract.partitions(
-        decodedData[1]
+        decodedPartition,
+        { blockTag: txEvent.blockNumber },
       );
+      console.log("OK3");
 
-      if (destinationPartitionMapping == true) {
+
+      if (destinationPartitionMapping) {
         if (value.gte(amountThreshold)) {
           const newFinding: Finding = createFinding(
             amountThreshold,
-            events.args.value,
-            events.args.fromPartition,
-            events.args.operator,
-            events.args.from,
-            decodedData,
-            events.args.to
+            event.args.value,
+            event.args.fromPartition,
+            event.args.operator,
+            event.args.from,
+            decodedPartition,
+            event.args.to
           );
           findings.push(newFinding);
         }
       }
-    });
+    }));
+
     return findings;
   };
 }
@@ -100,7 +106,8 @@ export function provideHandleTransaction(
 export default {
   handleTransaction: provideHandleTransaction(
     AMOUNT_THRESHOLD,
-    "0xfF20817765cB7f73d4bde2e66e067E58D11095C2",
-    "0x706D7F8B3445D8Dfc790C524E3990ef014e7C578"
+    AMP_TOKEN,
+    FLEXA_TOKEN,
+    getEthersProvider(),
   ),
 };

@@ -8,20 +8,22 @@ import {
 import { provideHandleTransaction } from "./agent";
 import { BigNumber } from "ethers";
 import { Interface } from "@ethersproject/abi";
-import abi from "./abi";
+import util from "./utils";
 import { leftPad } from "web3-utils";
 
 const toBytes32 = (n: string) => leftPad(BigNumber.from(n).toHexString(), 64);
 const testAmp: string = createAddress("0xdef1");
 const testFlexa: string = createAddress("0xf1e4a");
 const testThreshold: BigNumber = BigNumber.from(100);
-const testAmpIFace: Interface = new Interface(abi.AMP_TOKEN);
-const testFlexaIFace: Interface = new Interface(abi.COLLATERAL_MANAGER);
+const testAmpIFace: Interface = new Interface(util.AMP_TOKEN);
+const testFlexaIFace: Interface = new Interface(util.COLLATERAL_MANAGER);
 const testFlag: string =
   "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-  const AMOUNT_CORRECTION: BigNumber = BigNumber.from(10).pow(18);
   const PRICE_CORRECTION: BigNumber = BigNumber.from(10).pow(8);
+  const AMOUNT_CORRECTION: BigNumber = BigNumber.from(10).pow(18);
+
   const TOKEN_PRICE = BigNumber.from(10).mul(PRICE_CORRECTION);
+
 const createFinding = ([
   value,
   fromPartition,
@@ -39,21 +41,23 @@ const createFinding = ([
   metadata: {
     value, 
     fromPartition,
-    operator, from,
+    operator, 
+    from,
     destinationPartition,
-    to, operatorData,
+    to, 
+    operatorData,
   },
 });
 
 describe("Large stake deposits", () => {
   let handleTransaction: HandleTransaction;
-  const mockProvider = new MockEthersProvider();
   const mockPrice = jest.fn();
   const mockFetcher = {
     getAmpPrice: mockPrice,
   };
   mockPrice.mockReturnValue([1, TOKEN_PRICE, 2, 3, 1]);
 
+  const mockProvider = new MockEthersProvider();
 
   beforeAll(() => {
     handleTransaction = provideHandleTransaction(
@@ -183,7 +187,7 @@ describe("Large stake deposits", () => {
 
     const testOperator: string = createAddress("0xdef954");
     const bytesOperatorData: string = toBytes32("0x0951");
-    const testValue: BigNumber = BigNumber.from(200);
+    const testValue: BigNumber = BigNumber.from(200).mul(AMOUNT_CORRECTION);
 
     const testDestinationPartition: string = toBytes32("0xd679");
     const testData: string = encodeParameters(
@@ -228,7 +232,7 @@ describe("Large stake deposits", () => {
 
     const testOperator: string = createAddress("0xdef954");
     const bytesOperatorData: string = toBytes32("0x0952");
-    const testValue: BigNumber = BigNumber.from(200);
+    const testValue: BigNumber = BigNumber.from(200).mul(AMOUNT_CORRECTION);
 
     const testDestinationPartition: string = toBytes32("0xd689");
     const testData: string = encodeParameters(

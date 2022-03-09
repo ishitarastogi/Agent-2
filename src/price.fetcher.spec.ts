@@ -1,6 +1,6 @@
 import { createAddress, MockEthersProvider } from "forta-agent-tools";
 import { BigNumber } from "ethers";
-import { PRICE_ABI } from "./utils";
+import util from "./utils";
 import PriceFetcher from "./price.fetcher";
 import { Interface } from "@ethersproject/abi";
 
@@ -21,7 +21,7 @@ describe("PriceFetcher test suite", () => {
       mockProvider.addCallTo(
         contract,
         block,
-        new Interface(PRICE_ABI),
+        new Interface(util.PRICE_ABI),
         "latestRoundData",
         {
           inputs: [],

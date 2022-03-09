@@ -9,8 +9,7 @@ import {
 import { BigNumber, utils, providers } from "ethers";
 import PriceFetcher from "./price.fetcher";
 
-import abi from "./abi";
-import { CHAINLINK_AMP_DATA_FEED } from "./utils";
+import util from "./utils";
 const AMOUNT_THRESHOLD: BigNumber = BigNumber.from(10 ** 6); // 1 million
 const AMOUNT_CORRECTION: BigNumber = BigNumber.from(10).pow(18);
 const PRICE_CORRECTION: BigNumber = BigNumber.from(10).pow(8);
@@ -53,7 +52,7 @@ export function provideHandleTransaction(
 ) {
   const flexaStakingContract = new ethers.Contract(
     flexaManager,
-    abi.COLLATERAL_MANAGER,
+    util.COLLATERAL_MANAGER,
     provider
   );
   return async (txEvent: TransactionEvent) => {
@@ -61,20 +60,20 @@ export function provideHandleTransaction(
 
     // filter the transaction logs for transferByPartition events
     const transferByPartitionEvents = txEvent.filterLog(
-      abi.AMP_TOKEN,
+      util.AMP_TOKEN,
       ampToken
     );
     const priceFeed: BigNumber[] = await fetcher.getAmpPrice(
       txEvent.blockNumber,
-      CHAINLINK_AMP_DATA_FEED
+      util.CHAINLINK_AMP_DATA_FEED
     );
     let tokenPrice = priceFeed[1];
 
     // fire alerts for transfers of large stake
     await Promise.all(
       transferByPartitionEvents.map(async (event) => {
-        const data = event.args.data;
-        const value = event.args.value;
+        const data: string= event.args.data;
+        const value: BigNumber  = event.args.value;
         //derives destinationAddress from data argument
         let decodedPartition: string;
 

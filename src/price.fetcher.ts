@@ -1,6 +1,6 @@
 import { providers, Contract, BigNumber } from "ethers";
 import LRU from "lru-cache";
-import { PRICE_ABI } from "./utils";
+import util from "./utils";
 
 export type Response = [
   //response struct
@@ -27,7 +27,7 @@ export default class PriceFetcher {
   ): Promise<Response> {
     const key: string = `${block} - ${contract}`;
     if (this.cache.has(key)) return this.cache.get(key) as Promise<Response>;
-    const priceFeedContract = new Contract(contract, PRICE_ABI, this.provider);
+    const priceFeedContract = new Contract(contract, util.PRICE_ABI, this.provider);
     const ampPrice: Promise<Response> = priceFeedContract.latestRoundData({
       blockTag: block,
     });

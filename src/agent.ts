@@ -7,36 +7,39 @@ import {
   ethers,
 } from "forta-agent";
 import { BigNumber, utils, providers } from "ethers";
-import abi from "./abi";
+import PriceFetcher from "./price.fetcher";
 
-const ethersProvider = getEthersProvider();                    
-const AMOUNT_THRESHOLD = utils.parseEther("1").mul(1e6); // 1 million
+import abi from "./abi";
+import { CHAINLINK_AMP_DATA_FEED } from "./utils";
+const AMOUNT_THRESHOLD: BigNumber = BigNumber.from(10 ** 6); // 1 million
+const AMOUNT_CORRECTION: BigNumber = BigNumber.from(10).pow(18);
+const PRICE_CORRECTION: BigNumber = BigNumber.from(10).pow(8);
 const AMP_TOKEN: string = "0xfF20817765cB7f73d4bde2e66e067E58D11095C2";
-const FLEXA_TOKEN: string = "0x706D7F8B3445D8Dfc790C524E3990ef014e7C578";
+const FLEXA_CONTRACT: string = "0x706D7F8B3445D8Dfc790C524E3990ef014e7C578";
 
 export const createFinding = (
-  amountThreshold: any,
-  amount: number,
+  amount: BigNumber,
   partition: string,
   operator: string,
   from: string,
   destinationPartition: string,
-  to: string
+  to: string,
+  operatorData: string
 ): Finding => {
   return Finding.fromObject({
     name: "Large Deposit",
     description: "Large Deposit into staking pool",
-    alertId: "FLEXA-1",
+    alertId: "FLEXA-2",
     severity: FindingSeverity.Info,
     type: FindingType.Info,
     metadata: {
-      amountThreshold,
       value: amount.toString(),
-      partition: partition.toLocaleLowerCase(),
-      operator: operator.toLocaleLowerCase(),
-      from: from.toLocaleLowerCase(),
-      destinationPartition: destinationPartition.toLocaleLowerCase(),
-      to: to.toLocaleLowerCase(),
+      fromPartition: partition.toLowerCase(),
+      operator: operator.toLowerCase(),
+      from: from.toLowerCase(),
+      destinationPartition: destinationPartition.toLowerCase(),
+      to: to.toLowerCase(),
+      operatorData: operatorData.toLowerCase(),
     },
   });
 };
@@ -46,11 +49,12 @@ export function provideHandleTransaction(
   ampToken: string,
   flexaManager: string,
   provider: providers.Provider,
+  fetcher: PriceFetcher
 ) {
   const flexaStakingContract = new ethers.Contract(
     flexaManager,
-    abi.FLEXA_TOKEN,
-    provider,
+    abi.COLLATERAL_MANAGER,
+    provider
   );
   return async (txEvent: TransactionEvent) => {
     const findings: Finding[] = [];
@@ -60,54 +64,65 @@ export function provideHandleTransaction(
       abi.AMP_TOKEN,
       ampToken
     );
-    // console.log(transferByPartitionEvents);
+    const priceFeed: BigNumber[] = await fetcher.getAmpPrice(
+      txEvent.blockNumber,
+      CHAINLINK_AMP_DATA_FEED
+    );
+    let tokenPrice = priceFeed[1];
 
     // fire alerts for transfers of large stake
-    await Promise.all(transferByPartitionEvents.map(async (event) => {
-      const data = event.args.data;
-      const value = event.args.value;
+    await Promise.all(
+      transferByPartitionEvents.map(async (event) => {
+        const data = event.args.data;
+        const value = event.args.value;
+        //derives destinationAddress from data argument
+        let decodedPartition: string;
 
-      // console.log("OK1");
-      //derives destinationAddress from data argument
-      const [,decodedPartition] = utils.defaultAbiCoder.decode(
-        ["bytes32", "bytes32"],
-        data,
-      );
-
-      console.log("foo",decodedPartition, data);
-      const destinationPartitionMapping = await flexaStakingContract.partitions(
-        decodedPartition,
-        { blockTag: txEvent.blockNumber },
-      );
-      console.log("OK3");
-
-
-      if (destinationPartitionMapping) {
-        if (value.gte(amountThreshold)) {
-          const newFinding: Finding = createFinding(
-            amountThreshold,
-            event.args.value,
-            event.args.fromPartition,
-            event.args.operator,
-            event.args.from,
-            decodedPartition,
-            event.args.to
+        if (data.length < 128) {
+          decodedPartition = event.args._fromPartition;
+        } else {
+          [, decodedPartition] = utils.defaultAbiCoder.decode(
+            ["bytes32", "bytes32"],
+            data
           );
-          findings.push(newFinding);
         }
-      }
-    }));
+
+        const isValidPartition = await flexaStakingContract.partitions(
+          decodedPartition,
+          { blockTag: txEvent.blockNumber }
+        );
+
+        if (isValidPartition) {
+          if (
+            value
+              .mul(tokenPrice)
+              .gte(amountThreshold.mul(AMOUNT_CORRECTION).mul(PRICE_CORRECTION))
+          ) {
+            const newFinding: Finding = createFinding(
+              event.args.value,
+              event.args.fromPartition,
+              event.args.operator,
+              event.args.from,
+              decodedPartition,
+              event.args.to,
+              event.args.operatorData
+            );
+            findings.push(newFinding);
+          }
+        }
+      })
+    );
 
     return findings;
   };
 }
 
-
 export default {
   handleTransaction: provideHandleTransaction(
     AMOUNT_THRESHOLD,
     AMP_TOKEN,
-    FLEXA_TOKEN,
+    FLEXA_CONTRACT,
     getEthersProvider(),
+    new PriceFetcher(getEthersProvider())
   ),
 };

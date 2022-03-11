@@ -7,108 +7,54 @@ import {
   ethers,
 } from "forta-agent";
 import { BigNumber, utils, providers } from "ethers";
-import PriceFetcher from "./price.fetcher";
-
 import util from "./utils";
-const AMOUNT_THRESHOLD: BigNumber = BigNumber.from(10 ** 6); // 1 million
-const AMOUNT_CORRECTION: BigNumber = BigNumber.from(10).pow(18);
-const PRICE_CORRECTION: BigNumber = BigNumber.from(10).pow(8);
-const AMP_TOKEN: string = "0xfF20817765cB7f73d4bde2e66e067E58D11095C2";
-const FLEXA_CONTRACT: string = "0x706D7F8B3445D8Dfc790C524E3990ef014e7C578";
 
-export const createFinding = (
-  amount: BigNumber,
-  partition: string,
-  operator: string,
-  from: string,
-  destinationPartition: string,
-  to: string,
-  operatorData: string
-): Finding => {
+const AugustusSwapper: string = "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57";
+
+export const createFinding = (): Finding => {
   return Finding.fromObject({
-    name: "Large Deposit",
-    description: "Large Deposit into staking pool",
-    alertId: "FLEXA-2",
+    name: "Admin Role",
+    description: "Admin controlled functions",
+    alertId: "PARASWAP-2",
     severity: FindingSeverity.Info,
     type: FindingType.Info,
-    metadata: {
-      value: amount.toString(),
-      fromPartition: partition.toLowerCase(),
-      operator: operator.toLowerCase(),
-      from: from.toLowerCase(),
-      destinationPartition: destinationPartition.toLowerCase(),
-      to: to.toLowerCase(),
-      operatorData: operatorData.toLowerCase(),
-    },
+    protocol: "PARASWAP",
+    metadata: {},
   });
 };
 
 export function provideHandleTransaction(
-  amountThreshold: BigNumber,
-  ampToken: string,
-  flexaManager: string,
-  provider: providers.Provider,
-  fetcher: PriceFetcher
+  augustusSwapper: string,
+
+  provider: providers.Provider
 ) {
-  const flexaStakingContract = new ethers.Contract(
-    flexaManager,
-    util.COLLATERAL_MANAGER,
+  const transferTokensFunction = new ethers.Contract(
+    augustusSwapper,
+    util.TRANSFER_TOKENS,
     provider
   );
   return async (txEvent: TransactionEvent) => {
     const findings: Finding[] = [];
 
-    // filter the transaction logs for transferByPartition events
-    const transferByPartitionEvents = txEvent.filterLog(
-      util.AMP_TOKEN,
-      ampToken
+    const transferTokensFun = txEvent.filterFunction(
+      util.TRANSFER_TOKENS,
+      AugustusSwapper
     );
-    const priceFeed: BigNumber[] = await fetcher.getAmpPrice(
-      txEvent.blockNumber,
-      util.CHAINLINK_AMP_DATA_FEED
-    );
-    let tokenPrice = priceFeed[1];
 
-    // fire alerts for transfers of large stake
     await Promise.all(
-      transferByPartitionEvents.map(async (event) => {
-        const data: string= event.args.data;
-        const value: BigNumber  = event.args.value;
-        //derives destinationAddress from data argument
-        let decodedPartition: string;
+      transferTokensFun.map(async (event) => {
+        const from: string = event.args.from;
+        const to: string = event.args.to;
+        const value: BigNumber = event.args.value;
 
-        if (data.length < 128) {
-          decodedPartition = event.args._fromPartition;
-        } else {
-          [, decodedPartition] = utils.defaultAbiCoder.decode(
-            ["bytes32", "bytes32"],
-            data
-          );
-        }
-
-        const isValidPartition = await flexaStakingContract.partitions(
-          decodedPartition,
-          { blockTag: txEvent.blockNumber }
+        const transferEvents = txEvent.filterLog(
+          util.AUGUSTUS_SWAPPER,
+          augustusSwapper
         );
+        await Promise.all(transferEvents.map(async (event) => {}));
 
-        if (isValidPartition) {
-          if (
-            value
-              .mul(tokenPrice)
-              .gte(amountThreshold.mul(AMOUNT_CORRECTION).mul(PRICE_CORRECTION))
-          ) {
-            const newFinding: Finding = createFinding(
-              event.args.value,
-              event.args.fromPartition,
-              event.args.operator,
-              event.args.from,
-              decodedPartition,
-              event.args.to,
-              event.args.operatorData
-            );
-            findings.push(newFinding);
-          }
-        }
+        const newFinding: Finding = createFinding();
+        findings.push(newFinding);
       })
     );
 
@@ -118,10 +64,7 @@ export function provideHandleTransaction(
 
 export default {
   handleTransaction: provideHandleTransaction(
-    AMOUNT_THRESHOLD,
-    AMP_TOKEN,
-    FLEXA_CONTRACT,
-    getEthersProvider(),
-    new PriceFetcher(getEthersProvider())
+    AugustusSwapper,
+    getEthersProvider()
   ),
 };
